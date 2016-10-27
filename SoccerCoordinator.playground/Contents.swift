@@ -50,19 +50,26 @@ let teamPlayersKey = "Players"
 let teamNameKey = "Team Name"
 let teamPracticeTimeKey = "Practice Time"
 
-// create an array of team dictionaries - I chose to do it this way so that the subsequent code
-// allows for any number of teams
+// create an array of team dictionaries
+
+// N.B. I chose to avoid hard-coding the number of teams to 3.
+//      Instead I create an array of team dictionaries, so the number of teams
+//      can change in the future.
+
 // could have used structs or classes here
 var listOfTeams: [[String:Any]] = [
     [teamPlayersKey : [], teamNameKey : "Dragons", teamPracticeTimeKey : "March 17, 1pm"],
     [teamPlayersKey : [], teamNameKey : "Sharks", teamPracticeTimeKey : "March 17, 3pm"],
     [teamPlayersKey : [], teamNameKey : "Raptors", teamPracticeTimeKey : "March 18, 1pm"]]
 
-if listOfPlayers.count % listOfTeams.count != 0 {
-    
-    print("Oops! \(listOfPlayers.count) players cannot be evenly distributed across \(listOfTeams.count) teams.")
-    
-} else {
+
+// this function distributes players to each of the teams, one-by-one
+// parameters: experienced - allows us to distribute just experienced or inexperienced players
+//             startingWithTeam - allows us start at a particular team, in case players
+//                                were not evenly distributed last time the funcitonwas called
+// returns: Int - which tells the caller which team will be due a player next time the function
+//                is called
+func distributePlayers(experienced: Bool, startingWithTeam: Int) -> Int {
     
     // a counter to determine which team should get the next player
     var nextTeamToGetPlayer = 0
@@ -76,7 +83,7 @@ if listOfPlayers.count % listOfTeams.count != 0 {
         // could have used a guard satement here
         if let isExperienced = player[playerExperienceKey] as? Bool {
             
-            if isExperienced {
+            if isExperienced == experienced {
                 
                 // experienced player
                 
@@ -84,13 +91,10 @@ if listOfPlayers.count % listOfTeams.count != 0 {
                 var teamDict = listOfTeams[nextTeamToGetPlayer]
                 
                 // fetch the players array for that team
-                if var players = teamDict[teamPlayersKey] as? [[String:Any]] {
-                    
-                    // append the new player
-                    players.append(player)
+                if let players = teamDict[teamPlayersKey] as? [[String:Any]] {
                     
                     // assign the players array to the team dictionary (value type)
-                    teamDict[teamPlayersKey] = players
+                    teamDict[teamPlayersKey] = players + [player]
                     
                     // assign this as the new dictionary for this team (value type)
                     listOfTeams[nextTeamToGetPlayer] = teamDict
@@ -108,52 +112,24 @@ if listOfPlayers.count % listOfTeams.count != 0 {
         } else {
             
             print("Oops! Problem processing player data: value for '\(playerExperienceKey)' not found.")
-            break
         }
     }
+
+    return nextTeamToGetPlayer
+}
+
+
+if listOfPlayers.count % listOfTeams.count != 0 {
     
-    // iterate through the list of players again, this time distributing the inexperienced players
-    for player in listOfPlayers {
-        
-        // get the experienced value from the player dictionary
-        // could have used a guard satement here
-        if let isExperienced = player[playerExperienceKey] as? Bool {
-            
-            if !isExperienced {
-                
-                // inexperienced player
-                
-                // fetch the appropriate team dictionary from the list of teams
-                var teamDict = listOfTeams[nextTeamToGetPlayer]
-                
-                // fetch the players array for that team
-                if var players = teamDict[teamPlayersKey] as? [[String:Any]] {
-                    
-                    // append the new player
-                    players.append(player)
-                    
-                    // assign the players array to the team dictionary (value type)
-                    teamDict[teamPlayersKey] = players
-                    
-                    // assign this as the new dictionary for this team (value type)
-                    listOfTeams[nextTeamToGetPlayer] = teamDict
-                }
-                
-                // increment the counter to point to the next team
-                nextTeamToGetPlayer += 1
-                
-                // check if the counter exceeds the number of teams, if so reset to the first team
-                if nextTeamToGetPlayer >= listOfTeams.count {
-                    nextTeamToGetPlayer = 0
-                }
-            }
-            
-        } else {
-            
-            print("Oops! Problem processing player data: value for '\(playerExperienceKey)' not found.")
-            break
-        }
-    }
+    print("Oops! \(listOfPlayers.count) players cannot be evenly distributed across \(listOfTeams.count) teams.")
+    
+} else {
+    
+    // distribute experienced players to the teams first
+    let nextTeam = distributePlayers(experienced: true, startingWithTeam: 0)
+    
+    // distribute inexperienced players to the teams next
+    distributePlayers(experienced: false, startingWithTeam: nextTeam)
 }
 
 
@@ -324,6 +300,7 @@ for rosterPosition in 0..<playersPerTeam {
 // PART 3
 ////////////////////////////////////
 
+var letters = [String]()
 
 for team in listOfTeams {
     
@@ -341,20 +318,18 @@ for team in listOfTeams {
             if let playerName = player[playerNameKey] as? String,
                 let playerGuardians = player[playerGuardianKey] as? String {
                 
-                print("=============================================\nDear \(playerGuardians),\n\nI am writing to let you know that \(playerName) has been selected to play for the \(teamName) soccer team. Our practice time will be \(practiceTime) at Wembley Stadium.\n\nLooking forward to seeing your child there.\n\nYours sincerely,\n\nDavid Beckham\n")
+                letters.append("Dear \(playerGuardians),\n\nI am writing to let you know that \(playerName) has been selected to play for the \(teamName) soccer team. Our practice time will be \(practiceTime) at Wembley Stadium.\n\nLooking forward to seeing your child there.\n\nYours sincerely,\n\nDavid Beckham\n")
                 
             } else {
                 
                 print("Oops! There was a problem reading player data whilst generating letters.")
-                break
             }
         }
         
     } else {
         
         print("Oops! There was a problem with the letter data")
-        break
     }
 }
 
-
+letters
