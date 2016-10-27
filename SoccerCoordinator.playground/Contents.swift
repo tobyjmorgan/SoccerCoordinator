@@ -146,158 +146,118 @@ if listOfPlayers.count % listOfTeams.count != 0 {
 // look to see if we have an imbalance in the average players height between teams
 
 
+// function to get the average height of an array of players
+func getAverageHeightOfPlayers(players: [[String:Any]]) -> Double {
+    
+    var tally = 0.0
+    
+    for player in players {
+        
+        // get the players height
+        if let height = player[playerHeightKey] as? Int {
+            
+            // add it to the tally
+            tally += Double(height)
+        }
+    }
+    
+    return tally / Double(players.count)
+}
+
+
+
 // calculate the number of players in each team
 let playersPerTeam = listOfPlayers.count / listOfTeams.count
 
-// iterate through the teams' players, looking at the equivalent roster position across the teams
-// if we detect an imbalance we will repeatedly swap players around as we walk down the rosters
-// until it is balanced or until we reach the end of the rosters
+// walk through the roster
+// for each iteration, we will determine if there is an imbalance in the average heights
+// and if so, try swapping the tallest and shortest player at that roster position
 for rosterPosition in 0..<playersPerTeam {
     
-    /////////////////////////////////////////////////////////////////////////
-    // Step A - tally the heights for each team and put them in an array
+    // create an array for capturing the current average height of each team
+    var averageTeamHeights = [Double]()
     
-    var heightTallies: [Int] = []
-    
-    // iterate through the teams
     for team in listOfTeams {
         
-        // initialize the tally to zero
-        var tally = 0
-        
-        // get the array of players for the team
+        // get the array of players for this team
         if let players = team[teamPlayersKey] as? [[String:Any]] {
             
-            // iterate through the players
-            for player in players {
-                
-                // get the players height
-                if let height = player[playerHeightKey] as? Int {
-                    
-                    // add it to the tally
-                    tally += height
-                }
-            }
-        }
-        
-        // append this tally to an array that corresponds to the list of teams
-        heightTallies.append(tally)
-    }
-    
-    
-    /////////////////////////////////////////////////////////////////////////
-    // Step B - compare the average heights to see if there is an imbalance
-    
-    // these willl capture which teams have the highest and lowest average heights
-    var teamWithTheLowestAverageHeight: Int?
-    var teamWithTheHighestAverageHeight: Int?
-    
-    // if this gets set to true then we move on to the swapping players logic
-    var imbalanceFound = false
-    
-    // to keep track of the highest and lowest averages across all the teams for comparison purposes
-    var lowestAverage = 0.0
-    var highestAverage = 0.0
-    
-    // iterate through the tallies
-    for tallyIndex in 0..<heightTallies.count {
-        
-        // get the tally at this index
-        let tally = heightTallies[tallyIndex]
-        
-        // calculate the average height
-        let averageHeightForThisTeam = Double(tally / playersPerTeam)
-        
-        // first time we get here these optionals will not have been set, so just
-        // setting initial values for subsequent comparisons
-        if teamWithTheLowestAverageHeight == nil ||
-            teamWithTheHighestAverageHeight == nil {
-            
-            teamWithTheLowestAverageHeight = tallyIndex
-            lowestAverage = averageHeightForThisTeam
-            teamWithTheHighestAverageHeight = tallyIndex
-            highestAverage = averageHeightForThisTeam
-        }
-        
-        
-        // compare this average to the lowest average so far
-        if averageHeightForThisTeam - lowestAverage > 1.5 {
-            
-            // significantly different averageHeight
-            imbalanceFound = true
-        }
-        
-        // compare this average to the highest average so far
-        if highestAverage - averageHeightForThisTeam > 1.5 {
-            
-            // significantly different averageHeight
-            imbalanceFound = true
-        }
-        
-        // capture whether this average height is the lowest so far
-        if averageHeightForThisTeam < lowestAverage {
-            teamWithTheLowestAverageHeight = tallyIndex
-            lowestAverage = averageHeightForThisTeam
-        }
-        
-        // capture whether this average height is the highest so far
-        if averageHeightForThisTeam > highestAverage {
-            teamWithTheHighestAverageHeight = tallyIndex
-            highestAverage = averageHeightForThisTeam
+            // capture the calculated average height in our array
+            averageTeamHeights.append(getAverageHeightOfPlayers(players: players))
         }
     }
     
+    // now we will compare the teams to see which are the tallest and shortest teams
+    var shortestTeamIndex: Int?
+    var tallestTeamIndex: Int?
     
-    /////////////////////////////////////////////////////////////////////////
-    // Step C - if there is an imbalance then try swapping the highest and lowest players around
-    
-    if imbalanceFound {
+    for teamIndex in 0..<averageTeamHeights.count {
         
-        // protecting against nil values here
-        if teamWithTheLowestAverageHeight != nil &&
-            teamWithTheHighestAverageHeight != nil {
+        // fetch this team's average height from the array
+        let averageHeightForThisTeam = averageTeamHeights[teamIndex]
+        
+        if shortestTeamIndex == nil {
             
-            // safe to use the bang operator
-            let highest = teamWithTheHighestAverageHeight!
-            let lowest = teamWithTheLowestAverageHeight!
+            // this is the first iteration, so set this team's index as a starting point
+            shortestTeamIndex = teamIndex
+            tallestTeamIndex = teamIndex
+        }
+        
+        // compare to see if this team is the shortest
+        if averageHeightForThisTeam < averageTeamHeights[shortestTeamIndex!] {
+            shortestTeamIndex = teamIndex
+        }
+        
+        // compare to see if this team is the tallest
+        if averageHeightForThisTeam > averageTeamHeights[tallestTeamIndex!] {
+            tallestTeamIndex = teamIndex
+        }
+    }
+    
+    // check to see:
+    //    - our optionals have values
+    //    - they are different teams
+    //    - that there is an unacceptable imbalance
+    if let shortestTeamIndex = shortestTeamIndex,
+        let tallestTeamIndex = tallestTeamIndex,
+        shortestTeamIndex != tallestTeamIndex &&
+        averageTeamHeights[shortestTeamIndex] < averageTeamHeights[tallestTeamIndex] - 1.5 {
             
-            print("Imbalance found. Highest: \(highest), lowest \(lowest)")
+        // we have an unacceptable height imbalance
+        
+        print("Imbalance found. Highest: \(tallestTeamIndex), lowest \(shortestTeamIndex)")
+        
+        
+        // fetch the appropriate team dictionaries from the list of teams
+        var lowTeamDict = listOfTeams[shortestTeamIndex]
+        var highTeamDict = listOfTeams[tallestTeamIndex]
+        
+        // fetch the players array for those teams
+        if var lowTeamPlayers = lowTeamDict[teamPlayersKey] as? [[String:Any]],
+            var highTeamPlayers = highTeamDict[teamPlayersKey] as? [[String:Any]] {
             
-            // checking there is really work to do and that these values are within the bounds of our array
-            if highest != lowest &&
-                listOfTeams.indices.contains(highest) &&
-                listOfTeams.indices.contains(lowest) {
-                
-                // fetch the appropriate team dictionaries from the list of teams
-                var lowTeamDict = listOfTeams[lowest]
-                var highTeamDict = listOfTeams[highest]
-                
-                // fetch the players array for those teams
-                if var lowTeamPlayers = lowTeamDict[teamPlayersKey] as? [[String:Any]],
-                    var highTeamPlayers = highTeamDict[teamPlayersKey] as? [[String:Any]] {
-                    
-                    // remove and capture the players at this roster position
-                    let playerOnShortTeam = lowTeamPlayers.remove(at: rosterPosition)
-                    let playerOnTallTeam = highTeamPlayers.remove(at: rosterPosition)
-                    
-                    // swap them
-                    lowTeamPlayers.insert(playerOnTallTeam, at: rosterPosition)
-                    highTeamPlayers.insert(playerOnShortTeam, at: rosterPosition)
-                    
-                    // replace rosters with updated arrays (value types)
-                    lowTeamDict[teamPlayersKey] = lowTeamPlayers
-                    highTeamDict[teamPlayersKey] = highTeamPlayers
-                    
-                    // replace team dictionaries with updated dictionaries (value types)
-                    listOfTeams[lowest] = lowTeamDict
-                    listOfTeams[highest] = highTeamDict
-                }
-            }
+            // remove and capture the players at this roster position
+            let playerOnShortTeam = lowTeamPlayers.remove(at: rosterPosition)
+            let playerOnTallTeam = highTeamPlayers.remove(at: rosterPosition)
+            
+            // swap them
+            lowTeamPlayers.insert(playerOnTallTeam, at: rosterPosition)
+            highTeamPlayers.insert(playerOnShortTeam, at: rosterPosition)
+            
+            // replace rosters with updated arrays (value types)
+            lowTeamDict[teamPlayersKey] = lowTeamPlayers
+            highTeamDict[teamPlayersKey] = highTeamPlayers
+            
+            // replace team dictionaries with updated dictionaries (value types)
+            listOfTeams[shortestTeamIndex] = lowTeamDict
+            listOfTeams[tallestTeamIndex] = highTeamDict
         }
         
     } else {
         
-        // no imbalance move on
+        // if we get here, either something went wrong (one or zero number of teams for example)
+        // or there is no imbalance between average team heights and our work is done
+        // either way, we want to break out
         break
     }
 }
