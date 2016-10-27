@@ -65,18 +65,24 @@ var listOfTeams: [[String:Any]] = [
 
 // this function distributes players to each of the teams, one-by-one
 // parameters: experienced - allows us to distribute just experienced or inexperienced players
-//             startingWithTeam - allows us start at a particular team, in case players
-//                                were not evenly distributed last time the funcitonwas called
+//             startingWithTeam - allows us start at a particular team, just in case players
+//                                were not evenly distributed last time the funciton was called
 // returns: Int - which tells the caller which team will be due a player next time the function
 //                is called
 func distributePlayers(experienced: Bool, startingWithTeam: Int) -> Int {
     
     // a counter to determine which team should get the next player
-    var nextTeamToGetPlayer = 0
+    // set to desired starting team index
+    var nextTeamToGetPlayer = startingWithTeam
+    
+    // bounds check on counter value
+    if nextTeamToGetPlayer < 0 || nextTeamToGetPlayer >= listOfTeams.count {
+        nextTeamToGetPlayer = 0
+    }
     
     // could have used filter statements here
     
-    // iterate through the list of players, distributing experienced players first
+    // iterate through the list of players
     for player in listOfPlayers {
         
         // get the experienced value from the player dictionary
@@ -85,15 +91,13 @@ func distributePlayers(experienced: Bool, startingWithTeam: Int) -> Int {
             
             if isExperienced == experienced {
                 
-                // experienced player
-                
                 // fetch the appropriate team dictionary from the list of teams
                 var teamDict = listOfTeams[nextTeamToGetPlayer]
                 
                 // fetch the players array for that team
                 if let players = teamDict[teamPlayersKey] as? [[String:Any]] {
                     
-                    // assign the players array to the team dictionary (value type)
+                    // add the new player to the players array of the team dictionary (value type)
                     teamDict[teamPlayersKey] = players + [player]
                     
                     // assign this as the new dictionary for this team (value type)
@@ -133,6 +137,8 @@ if listOfPlayers.count % listOfTeams.count != 0 {
 }
 
 
+
+
 //////////////////////////////////////
 // PART 2 - Exceeds Expectations Part
 //////////////////////////////////////
@@ -143,7 +149,7 @@ if listOfPlayers.count % listOfTeams.count != 0 {
 // calculate the number of players in each team
 let playersPerTeam = listOfPlayers.count / listOfTeams.count
 
-// iterate through the teams' players, looking at the equivalent player position across the teams
+// iterate through the teams' players, looking at the equivalent roster position across the teams
 // if we detect an imbalance we will repeatedly swap players around as we walk down the rosters
 // until it is balanced or until we reach the end of the rosters
 for rosterPosition in 0..<playersPerTeam {
@@ -177,6 +183,7 @@ for rosterPosition in 0..<playersPerTeam {
         // append this tally to an array that corresponds to the list of teams
         heightTallies.append(tally)
     }
+    
     
     /////////////////////////////////////////////////////////////////////////
     // Step B - compare the average heights to see if there is an imbalance
