@@ -136,16 +136,6 @@ if listOfPlayers.count % listOfTeams.count != 0 {
     distributePlayers(experienced: false, startingWithTeam: nextTeam)
 }
 
-
-
-
-//////////////////////////////////////
-// PART 2 - Exceeds Expectations Part
-//////////////////////////////////////
-
-// look to see if we have an imbalance in the average players height between teams
-
-
 // function to get the average height of an array of players
 func getAverageHeightOfPlayers(players: [[String:Any]]) -> Double {
     
@@ -163,6 +153,44 @@ func getAverageHeightOfPlayers(players: [[String:Any]]) -> Double {
     
     return tally / Double(players.count)
 }
+
+func printTeamsToConsole() {
+    
+    for team in listOfTeams {
+        
+        if let teamName = team[teamNameKey] as? String,
+            let players = team[teamPlayersKey] as? [ [String : Any] ] {
+            
+            let averageHeight = getAverageHeightOfPlayers(players: players)
+            print("Team: \(teamName), average height: \(averageHeight)")
+            
+            for player in players {
+                
+                if let playerName = player[playerNameKey] as? String,
+                    let experienced = player[playerExperienceKey] as? Bool,
+                    let playerHeight = player[playerHeightKey] as? Int {
+                    
+                    print("    - \(playerName), experienced: \(experienced), height:\(playerHeight)")
+                }
+            }
+        }
+        print("\n")
+    }
+}
+
+// displaying team info as requested by reviewer
+print("==============================================")
+print("Here are the teams before checking for height imbalance:\n\n")
+printTeamsToConsole()
+
+
+
+
+//////////////////////////////////////
+// PART 2 - Exceeds Expectations Part
+//////////////////////////////////////
+
+// look to see if we have an imbalance in the average players height between teams
 
 
 
@@ -225,7 +253,7 @@ for rosterPosition in 0..<playersPerTeam {
             
         // we have an unacceptable height imbalance
         
-        print("Imbalance found. Highest: \(tallestTeamIndex), lowest \(shortestTeamIndex)")
+        print("Imbalance found. Tallest Team Index: \(tallestTeamIndex), Shortest Team Index \(shortestTeamIndex)")
         
         
         // fetch the appropriate team dictionaries from the list of teams
@@ -240,6 +268,14 @@ for rosterPosition in 0..<playersPerTeam {
             let playerOnShortTeam = lowTeamPlayers.remove(at: rosterPosition)
             let playerOnTallTeam = highTeamPlayers.remove(at: rosterPosition)
             
+            if let lowTeamName = lowTeamDict[teamNameKey],
+                let highTeamName = highTeamDict[teamNameKey],
+                let lowPlayerName = playerOnShortTeam[playerNameKey],
+                let highPlayerName = playerOnTallTeam[playerNameKey] {
+                
+                print("Swapping player \(lowPlayerName) on \(lowTeamName) with \(highPlayerName) on \(highTeamName)")
+            }
+
             // swap them
             lowTeamPlayers.insert(playerOnTallTeam, at: rosterPosition)
             highTeamPlayers.insert(playerOnShortTeam, at: rosterPosition)
@@ -258,9 +294,15 @@ for rosterPosition in 0..<playersPerTeam {
         // if we get here, either something went wrong (one or zero number of teams for example)
         // or there is no imbalance between average team heights and our work is done
         // either way, we want to break out
+        print("Team heights now balanced\n\n")
         break
     }
 }
+
+// displaying team info as requested by reviewer
+print("==============================================")
+print("Here are the teams after adjustments for average height :\n\n")
+printTeamsToConsole()
 
 
 ////////////////////////////////////
@@ -299,4 +341,10 @@ for team in listOfTeams {
     }
 }
 
-letters
+// displaying team info as requested by reviewer
+print("==============================================")
+print("Player letters :\n\n")
+for letter in letters {
+    
+    print(letter)
+}
